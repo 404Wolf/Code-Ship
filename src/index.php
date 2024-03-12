@@ -43,7 +43,8 @@
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        text: newContents
+                        text: newContents.slice(0, 100),
+                        date: (new Date()).getTime()
                     })
                 })
                 .then(response => response.json())
@@ -67,7 +68,7 @@
                             document.getElementById("last-update").innerText = "Updated at " + formatTime(new Date());
                         }
                     })
-            }, 1200);
+            }, 2000);
         }
 
         function beginAutoship() {
@@ -123,12 +124,12 @@
 
                 <!-- Area for user input -->
                 <code id="code-text-area">
-                    <textarea class="form-control font-monospace text-sm" style="min-height: 32rem; font-size: 12px" id="text-to-send" rows="3">
+<textarea class="form-control font-monospace text-sm" style="min-height: 32rem; font-size: 12px" id="text-to-send" rows="3">
 <?php
 $file = file_get_contents("contents.json");
 echo json_decode($file, true)['text'];
 ?>
-                    </textarea>
+</textarea>
                 </code>
 
                 <!-- Last update timestamp -->
