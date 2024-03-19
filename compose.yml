@@ -5,21 +5,27 @@ services:
             context: .
             dockerfile: nginx/Dockerfile
         ports:
-            - "80:80"
+            - "${PORT}:80"
         networks:
             - internal
         volumes:
             - ./data/:/var/www/html/
             - ./logs/nginx:/var/log/nginx/
     php:
-        image: php:fpm-alpine
+        build:
+            context: .
+            dockerfile: php/Dockerfile
         networks:
             - internal
         volumes:
-            - ./data/:/var/www/html/
             - ./logs/php.log:/var/log/fpm-php.www.logernal
         environment:
             - ADDRESS=${ADDRESS}
+            - PORT=${PORT}
+    redis:
+        image: redis:alpine
+        networks:
+            - internal
 networks:
     internal:
         driver: bridge

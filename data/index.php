@@ -1,6 +1,18 @@
 <!doctype html>
 <html lang="en">
 
+<?php
+require_once __DIR__ . '/vendor/autoload.php';
+require 'vendor/autoload.php';
+Predis\Autoloader::register();
+
+$client = new Predis\Client([
+    'scheme' => 'tcp',
+    'host'   => 'redis',  // Use the service name as the hostname                                                                                                                
+    'port'   => 6379,  // Default port for Redis                                                                                                                                 
+]);
+?>
+
 <head>
     <!-- Required meta tags -->
     <meta charset="utf-8">
@@ -20,6 +32,7 @@
 
     <?php
     echo '<script> const ADDRESS = "' . $_ENV['ADDRESS'] . '"; </script>';
+    echo '<script> const PORT = "' . $_ENV['PORT'] . '"; </script>';
     ?>
 
     <!-- Setup webhook on load -->
@@ -37,14 +50,13 @@
         function shipNewContents() {
             const newContents = document.getElementById("text-to-send").value;
             console.log("Shipping the contents of the text area. New contents: " + newContents);
-            fetch(`${ADDRESS}/update.php`, {
+            fetch(`${ADDRESS}:${PORT}/state.php`, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
                         text: newContents.slice(0, 100),
-                        date: (new Date()).getTime()
                     })
                 })
                 .then(response => response.json())
@@ -59,7 +71,7 @@
         function beginPolling() {
             setInterval(() => {
                 console.log("Attempting poll @" + (new Date()))
-                fetch(`${ADDRESS}/contents.json`)
+                fetch(`${ADDRESS}:${PORT}/state.php`)
                     .then(response => response.json())
                     .then(data => {
                         console.log("Polling for new updates @" + (new Date()).toDateString())
@@ -124,10 +136,9 @@
 
                 <!-- Area for user input -->
                 <code id="code-text-area">
-<textarea class="form-control font-monospace text-sm" style="min-height: 32rem; font-size: 12px" id="text-to-send" rows="3">
+                    <textarea class="form-control font-monospace text-sm" style="min-height: 32rem; font-size: 12px" id="text-to-send" rows="3">
 <?php
-$file = file_get_contents("contents.json");
-echo json_decode($file, true)['text'];
+$value = $client->get('text');
 ?>
 </textarea>
                 </code>
