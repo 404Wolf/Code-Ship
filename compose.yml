@@ -4,8 +4,8 @@ services:
         build:
             context: ./src
         ports:
-            - "8080:8080"
+            - "8080:80"
         environment:
             - ADDRESS=${ADDRESS}
         volumes:
-            - ./src:/app
+            - ./src:/usr/share/nginx/html
