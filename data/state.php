@@ -21,14 +21,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Dump the contents to the contents file
-    $client->set('contents', json_encode($data));
+    $client->set('text', $data['text']); 
 
     http_response_code(200);
     echo json_encode(["success" => true]);
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $contents = $client->get('contents');
+    $contents = $client->get('text');
+    $contents = json_encode(["text" => $contents]);
     if ($contents === null) {
         http_response_code(404);
         echo json_encode(["error" => "No data found"]);

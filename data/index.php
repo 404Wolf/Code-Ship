@@ -11,6 +11,11 @@ $client = new Predis\Client([
     'host'   => 'redis',  // Use the service name as the hostname                                                                                                                
     'port'   => 6379,  // Default port for Redis                                                                                                                                 
 ]);
+
+function injectVariable($name, $value)
+{
+    echo '<script> const ' . $name . ' = "' . $value . '"; </script>';
+}
 ?>
 
 <head>
@@ -20,6 +25,9 @@ $client = new Predis\Client([
 
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <!-- Favicon -->
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
 
     <!-- Page metadata -->
     <title>Send it!</title>
@@ -31,13 +39,15 @@ $client = new Predis\Client([
     </style>
 
     <?php
-    echo '<script> const ADDRESS = "' . $_ENV['ADDRESS'] . '"; </script>';
-    echo '<script> const PORT = "' . $_ENV['PORT'] . '"; </script>';
+    injectVariable('MAX_LENGTH', $_ENV['MAX_LENGTH']);
+    injectVariable('ADDRESS', $_ENV['ADDRESS']);
+    injectVariable('PORT', $_ENV['PORT']);
+    injectVariable('REFRESH_RATE', $_ENV['REFRESH_RATE'])
     ?>
 
     <!-- Setup webhook on load -->
     <script>
-        var doNotUpdateTextArea = false;
+        let priorContents = false;
 
         function setInputAreaText(text) {
             document.getElementById("text-to-send").value = text;
@@ -56,7 +66,7 @@ $client = new Predis\Client([
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        text: newContents.slice(0, 100),
+                        text: newContents.slice(0, MAX_LENGTH),
                     })
                 })
                 .then(response => response.json())
@@ -71,29 +81,24 @@ $client = new Predis\Client([
         function beginPolling() {
             setInterval(() => {
                 console.log("Attempting poll @" + (new Date()))
+                const textArea = document.getElementById("text-to-send");
+                if (textArea.value !== priorContents) {
+                    console.log("New contents detected. Shipping new contents.");
+                    shipNewContents();
+                    priorContents = textArea.value;
+                    return
+                }
+
                 fetch(`${ADDRESS}:${PORT}/state.php`)
                     .then(response => response.json())
                     .then(data => {
-                        console.log("Polling for new updates @" + (new Date()).toDateString())
-                        if (!doNotUpdateTextArea) {
+                        if (data.text !== priorContents) {
+                            console.log("Received new text contents. Updating text area.");
                             setInputAreaText(data.text);
-                            document.getElementById("last-update").innerText = "Updated at " + formatTime(new Date());
+                            document.getElementById("last-update").innerText = "Updated at " + formatTime(new Date())
                         }
                     })
-            }, 2000);
-        }
-
-        function beginAutoship() {
-            const textArea = document.getElementById("text-to-send")
-            textArea.addEventListener("input", () => {
-                shipNewContents();
-                doNotUpdateTextArea = true;
-                setTimeout(() => {
-                    if (doNotUpdateTextArea) {
-                        doNotUpdateTextArea = false;
-                    }
-                }, 1000);
-            })
+            }, REFRESH_RATE);
         }
 
         function formatTime() {
@@ -115,7 +120,6 @@ $client = new Predis\Client([
 
         addEventListener("DOMContentLoaded", () => {
             beginPolling();
-            beginAutoship();
         })
     </script>
 </head>
@@ -138,7 +142,7 @@ $client = new Predis\Client([
                 <code id="code-text-area">
                     <textarea class="form-control font-monospace text-sm" style="min-height: 32rem; font-size: 12px" id="text-to-send" rows="3">
 <?php
-$value = $client->get('text');
+echo $client->get('text');
 ?>
 </textarea>
                 </code>

@@ -22,6 +22,8 @@ services:
         environment:
             - ADDRESS=${ADDRESS}
             - PORT=${PORT}
+            - MAX_LENGTH=${MAX_LENGTH}
+            - REFRESH_RATE=${REFRESH_RATE}
     redis:
         image: redis:alpine
         networks:
