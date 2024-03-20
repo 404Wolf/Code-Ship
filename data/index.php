@@ -78,14 +78,20 @@ function injectVariable($name, $value)
                 })
         }
 
+        function justUpdated() {
+            document.getElementById("last-update").innerText = "Updated at " + formatTime(new Date());
+        }
+
         function beginPolling() {
             setInterval(() => {
+
                 console.log("Attempting poll @" + (new Date()))
                 const textArea = document.getElementById("text-to-send");
                 if (textArea.value !== priorContents) {
                     console.log("New contents detected. Shipping new contents.");
                     shipNewContents();
                     priorContents = textArea.value;
+                    justUpdated();
                     return
                 }
 
@@ -95,8 +101,8 @@ function injectVariable($name, $value)
                         if (data.text !== priorContents) {
                             console.log("Received new text contents. Updating text area.");
                             setInputAreaText(data.text);
-                            document.getElementById("last-update").innerText = "Updated at " + formatTime(new Date())
                         }
+                        justUpdated();
                     })
             }, REFRESH_RATE);
         }
